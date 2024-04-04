@@ -1,0 +1,13 @@
+<form [formGroup]="loginForm">
+  <div style="display: flex; flex-direction: column;margin: 5rem; align-items: center;">
+    <div class="input-container">
+      <label for="username">Username</label>
+      <input class="input-field" type="text" formControlName="username">
+    </div>
+    <div class="input-container">
+      <label for="pasword">Password</label>
+      <input class="input-field" type="password" name="password" id="password-field" formControlName="password">
+    </div>
+    <button type="submit" (click)="login()">Login</button>
+  </div>
+</form>
