@@ -1,1 +1,21 @@
-<p>timeline works!</p>
+<app-content-wrapper>
+  <form [formGroup]="form">
+    <mat-form-field>
+      <input matInput type="text" name="post" id="post-input" formControlName="post" />
+    </mat-form-field>
+    <button style="margin-left: 1.2rem;" mat-flat-button color="primary" type="submit"
+      (click)="submitPost()">Submit</button>
+  </form>
+  <div>
+    @if(timeline.posts.length) {
+    <div>
+      @for (post of timeline.posts; track post.postedDateTime) {
+      <app-timeline-post [post]="post"></app-timeline-post>
+      }
+    </div>
+    }
+    @else {
+    <div>Nothing posted yet</div>
+    }
+  </div>
+</app-content-wrapper>
