@@ -36,4 +36,11 @@ export class StoreService {
   validateUsernameAndPassword(username: string, password: string): boolean {
     return this.validateUsername(username) && this.validatePassword(password);
   }
+
+  logoutUser() {
+    this.password = '';
+    this.username = '';
+    this.timeline = { posts: [] };
+    this.authorizations = {};
+  }
 }

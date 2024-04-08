@@ -9,6 +9,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
+import { Router } from '@angular/router';
 import { take } from 'rxjs';
 import { ContentWrapperComponent } from '../content-wrapper/content-wrapper.component';
 import { CustomValidators } from '../custom-validators/whitespace-validator';
@@ -42,7 +43,11 @@ export class TimelineComponent {
   });
   timeline: Timeline | undefined;
 
-  constructor(private storeService: StoreService, private dialog: MatDialog) {
+  constructor(
+    private storeService: StoreService,
+    private dialog: MatDialog,
+    private router: Router
+  ) {
     this.timeline = storeService.timeline;
   }
 
@@ -87,6 +92,9 @@ export class TimelineComponent {
           if (valid) {
             this.storeService.authorizeAction('timelineSubmit');
             this.submitPost();
+          } else {
+            this.storeService.logoutUser();
+            this.router.navigate(['/logout']);
           }
         }
       });
