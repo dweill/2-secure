@@ -1,17 +1,1 @@
-<form [formGroup]="loginForm">
-  <app-content-wrapper>
-    <div>
-      <mat-form-field>
-        <mat-label for="username">Username</mat-label>
-        <input matInput type="text" formControlName="username">
-      </mat-form-field>
-    </div>
-    <div>
-      <mat-form-field>
-        <mat-label for="pasword">Password</mat-label>
-        <input matInput type="password" name="password" id="password-field" formControlName="password">
-      </mat-form-field>
-    </div>
-    <button style="margin-top: 2rem;" mat-flat-button color="primary" type="submit" (click)="login()">Login</button>
-  </app-content-wrapper>
-</form>
+<app-user-info-form submitText="Login" (submitClicked)="onSubmit($event)"></app-user-info-form>
