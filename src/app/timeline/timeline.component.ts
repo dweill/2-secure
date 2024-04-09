@@ -7,16 +7,21 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import {
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
-import { take } from 'rxjs';
+import { Subject, take, takeUntil } from 'rxjs';
 import { ContentWrapperComponent } from '../content-wrapper/content-wrapper.component';
 import { CustomValidators } from '../custom-validators/whitespace-validator';
 import { StoreService } from '../store.service';
 import { TimelinePostComponent } from '../timeline-post/timeline-post.component';
 import { Timeline } from '../types/timeline';
 import { TimelinePost } from '../types/timeline-post';
+import { UserInfo } from '../types/user-info';
 import { ValidateDialogComponent } from '../validate-dialog/validate-dialog.component';
 
 @Component({
@@ -43,24 +48,47 @@ export class TimelineComponent {
   });
   timeline: Timeline | undefined;
 
+  private onDestroySubject = new Subject<void>();
+
   constructor(
     private storeService: StoreService,
     private dialog: MatDialog,
     private router: Router
   ) {
     this.timeline = storeService.timeline;
+    this.form
+      ?.get('post')
+      ?.valueChanges.pipe(takeUntil(this.onDestroySubject))
+      .subscribe((value) => {
+        const chars = value?.split('');
+        const charSet = new Set(chars);
+        const uniqueChars = Array.from(charSet);
+        const invalidChars = uniqueChars.filter(
+          (uniqueChar) => !this.storeService.validateAuthorization(uniqueChar)
+        );
+        if (invalidChars.length) {
+          invalidChars.forEach((invalidChar) => {
+            this.checkCharacterAuth(invalidChar);
+          });
+        }
+      });
   }
 
-  submitPost() {
+  ngOnDestroy(): void {
+    this.onDestroySubject.next();
+    this.onDestroySubject.complete();
+  }
+
+  submitPost(validated?: boolean) {
     if (!this.form.valid) {
       return;
     }
-    const valid = this.storeService.validateAuthorization('timelineSubmit');
+    const valid = validated;
     const postValue = this.form.value.post?.trim();
     if (valid && postValue) {
       this.post(postValue);
     } else {
-      this.openDialog();
+      this.validateSubmit();
     }
   }
 
@@ -73,30 +101,57 @@ export class TimelineComponent {
     this.form.reset();
   }
 
-  openDialog(): void {
-    const dialogRef = this.dialog.open<
-      ValidateDialogComponent,
-      void,
-      { username: string; password: string }
-    >(ValidateDialogComponent, { disableClose: true });
+  checkCharacterAuth(character: string) {
+    const dialogRef = this.getDialogRef();
 
     dialogRef
       .afterClosed()
       .pipe(take(1))
       .subscribe((result) => {
-        if (result?.username && result.password) {
-          const valid = this.storeService.validateUsernameAndPassword(
-            result?.username,
-            result?.password
-          );
-          if (valid) {
-            this.storeService.authorizeAction('timelineSubmit');
-            this.submitPost();
-          } else {
-            this.storeService.logoutUser();
-            this.router.navigate(['/logout']);
-          }
+        const valid = this.handleAuthResult(result);
+        if (valid) {
+          this.storeService.authorizeAction(character);
+        } else {
+          this.logout();
         }
       });
+  }
+
+  validateSubmit(): void {
+    const dialogRef = this.getDialogRef();
+
+    dialogRef
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result) => {
+        const valid = this.handleAuthResult(result);
+        if (valid) {
+          this.submitPost(true);
+        } else {
+          this.logout();
+        }
+      });
+  }
+
+  handleAuthResult(userInfo: UserInfo | undefined): boolean {
+    if (userInfo?.username && userInfo.password) {
+      return this.storeService.validateUsernameAndPassword(
+        userInfo?.username,
+        userInfo?.password
+      );
+    }
+    return false;
+  }
+
+  private logout() {
+    this.storeService.logoutUser();
+    this.router.navigate(['/logout']);
+  }
+
+  private getDialogRef(): MatDialogRef<ValidateDialogComponent, UserInfo> {
+    return this.dialog.open<ValidateDialogComponent, void, UserInfo>(
+      ValidateDialogComponent,
+      { disableClose: true }
+    );
   }
 }
